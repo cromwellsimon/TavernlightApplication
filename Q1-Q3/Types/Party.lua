@@ -1,0 +1,3 @@
+---@class Party
+---@field getMembers function
+---@field removeMember function

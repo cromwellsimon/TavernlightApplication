@@ -1,0 +1,25 @@
+Q3 - Fix or improve the name and the implementation of the below method
+
+function do_sth_with_PlayerParty(playerId, membername)
+    player = Player(playerId)
+    local party = player:getParty()
+
+    for k,v in pairs(party:getMembers()) do
+        if v == Player(membername) then
+            party:removeMember(Player(membername))
+        end
+    end
+end
+
+
+
+
+
+
+
+
+Check if player ~= nil after line 4
+"membername" needs to be "memberId" instead. The function should be "removeMemberFromParty", and the "k" should probably be "index" while "v" should be "member"
+I don't know how performant the Player() function is, but does it make sense to call it over and over again? Should the Player Table contain an Id field on it which can just be queried directly instead of trying to gather all of the info for the Member repeatedly?
+Also, in line 9, just use "v" directly, there's no point in re-getting the Member at all.
+Furthermore, an enumeration on something that modifies itself isn't allowed in C#. I'm not sure if this is a thing with Lua but it usually isn't good practice to do that regardless, would it be better to make a seperate newParty Table and then just add the values to that instead of trying to remove from the in-use party table?

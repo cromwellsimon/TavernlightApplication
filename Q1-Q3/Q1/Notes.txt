@@ -1,0 +1,24 @@
+Q1 - Fix or improve the implementation of the below methods
+
+local function releaseStorage(player)
+    player:setStorageValue(1000, -1)
+end
+
+function onLogout(player)
+    if player:getStorageValue(1000) == 1 then
+        addEvent(releaseStorage, 1000, player)
+    end
+    return true
+end
+
+
+
+
+
+
+
+
+There is some ambiguity with this question that I'll need to ask about. Is the onLogout function implying that, whenever the player wants to log out, then the item with ID#1000 needs to be set to -1? Why is this the case?
+Is this supposed to be an unusable item in the player's inventory used to indicate whether they are online or not? Does this mean that the opposite onLogin function will set that same item with ID#1000 to +1 in order to indicate that the player is online? Why is this not stored in just a simple boolean? I may need to email about this to get further clarification
+Is releaseStorage supposed to be a function to mark the memory as free-to-use? Or is it literally setting ID#1000 to -1?
+Add error handling, make sure that player != nil before doing anything else
