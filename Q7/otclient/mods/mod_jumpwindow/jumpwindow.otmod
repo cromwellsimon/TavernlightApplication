@@ -1,0 +1,9 @@
+Module
+  name: mod_jumpwindow
+  description: Shows a button with "Jump!" on it that scrolls right-to-left and teleports to a random Y location whenever interacted or if it goes off-screen
+  author: cromwellsimon
+  website: https://github.com/cromwellsimon
+  sandboxed: true
+  scripts: [ jumpwindow ]
+  @onLoad: init()
+  @onUnload: terminate()
