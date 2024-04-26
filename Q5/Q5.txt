@@ -10,3 +10,26 @@ However, here was my general plan of attack for this:
 - But, I could not find the animation data anywhere. I could change the actual effect by changing the ICETORNADO effect in ForgottenServer with another effect and I could change where the effect happened in spells.lua which was also in the server, so I needed to find where ICETORNADO could be found on the client specifically.
 - OTClient supports many different client versions of Tibia (the Tibia.dat and Tibia.spr with Tibia.spr being the far larger file, the single largest file in the game). Mixed with the fact that different client versions change what the Eternal Winter spell looks like as seen here: https://tibia.fandom.com/wiki/Eternal_Winter and this image was nowhere to be found elsewhere, that leads me to believe that the actual asset for the ICETORNADO is found inside of Tibia.spr and somewhere in there would be where I could go to edit the base animation since, if that was the only difference between two versions but the animation change applied, then that seemed like my best shot.
 - But, with only one day, I had to pick my battles and trying to delve into hex editors did not seem like a very efficient use of my very limited time remaining, so I ended up skipping this question unfortunately
+
+
+EDIT:
+I know that I'm out of time for this question by three days but I had some free time here in the wee hours of the night and decided to go back on it just to satisfy my own personal curiosity
+I just realized that .spr is short for "Sprite", and, to that end, there is a .spr editor available here: https://www.spreditor.online/
+Even though it says that the latest Tibia version supported is 10.56, it is able to take my 10.98 Tibia.spr just fine. The resolution of the images are pretty bad though which makes it very hard to see, so I tried reverse-engineering how the process worked.
+Looking through ForgottenServer more, combat.cpp is the one that handled COMBAT_PARAM_EFFECT, which is what gets set to CONST_ME_ICETORNADO which == 43 in OTClient's eternal_winter.lua. It sets a params.impactEffect to whatever the value is of the effect, which is just an integer.
+In ForgottenServer in combat.cpp, if that impactEffect != CONST_ME_NONE (I'm guessing 0), then it calls a Game::addMagicEffect function and passes in that integer
+In game.cpp, Game::addMagicEffect will take in that effect and, on each the player spectators (I'm guessing everyone who is able to see the effect), it will call sendMagicEffect on them on the server, passing in the effect Id.
+sendMagicEffect in protocolgame.cpp then sends that message to the player, which gets picked up by protocolgameparse.cpp's ProtocolGame::parseMagicEffect function back in OTClient.
+parseMagicEffect will make a new Effect and pass in the ID, which gets handled in effect.cpp's Effect::setId function. Then, with that new Effect, that gets passed onto map.cpp's Map:addThing function.
+If the "thing" is an Effect, that gets passed into the tile.cpp's Tile::addThing function which subsequently calls the effect.cpp's Effect::onAppear function.
+I would assume that once it actually spawns, Effect:drawEffect gets called as well. Effect::onAppear and Effect:drawEffect call Thing::getAnimationPhases() and Animator::getPhaseAt() respectively and these are the most important things.
+
+I realized that this trying to parse through all of that may be a bit time consuming so I looked for alternatives and came across this: https://github.com/Arch-Mina/Assets-Editor which definitely seemed a lot more promising.
+Using this, I know that the first part of the Ice Tornado effect is Effect #43 (I know that the int used to represent it is 43, and I know this isn't an accident. CONST_ME_STONES is 45 and the 45th effect looked like several stones falling)
+I also know from https://tibia.fandom.com/wiki/Eternal_Winter that the animation is a little special because it has two parts to it. This texture contains both parts.
+With this now selected, it's simple enough to just export the animation and make the small tornado loop 3 times but keep the big tornado normal.
+
+So, that's the first question answered. The next question is changing the offset of some of the tornado spawns/despawns since that cannot be changed with just altering the spritesheet
+I know that some form of manipulation is happening directly on the sprite because the actual texture shows that the big tornado is on the top-left of the texture while the small tornado is on the bottom-right, yet on the actual spell cast, there are small tornados that are not directly south-east of a big tornado, specifically the north-west side of the spell cast and the south-east side of the spell cast.
+Going to the "Other" tab here, I can see a JSON that seems to contain all of the animation frames and some further information, including a mention that this animationMode is async. HOWEVER, neither animationMode nor ANIMATION_ASYNCHRONIZED is used anywhere in the server or the client.
+But, this question will have to wait for a later time, I'm going to go to sleep
